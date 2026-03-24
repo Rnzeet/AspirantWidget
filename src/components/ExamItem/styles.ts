@@ -141,6 +141,32 @@ export const styles = StyleSheet.create({
     color: '#adb5bd',
     textDecorationLine: 'line-through',
   },
+  addTargetContainer: {
+    flexDirection: 'row',
+    padding: 8,
+    gap: 8,
+    alignItems: 'center',
+  },
+  addTargetInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 13,
+  },
+  addTargetButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  addTargetButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
   motivationText: {
     fontSize: 13,
     fontWeight: '600',

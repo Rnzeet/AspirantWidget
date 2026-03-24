@@ -8,7 +8,9 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Exam, ExamCategory } from '../../data/types';
 
 type AddExamModalProps = {
@@ -24,10 +26,19 @@ const generateId = () => {
   return 'exam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 };
 
+const formatDateYYYYMMDD = (d: Date) => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 const AddExamModal: React.FC<AddExamModalProps> = ({ visible, onClose, onAddExam }) => {
   const [examName, setExamName] = useState('');
   const [description, setDescription] = useState('');
   const [examDate, setExamDate] = useState('');
+  const [dateValue, setDateValue] = useState<Date | undefined>(undefined);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ExamCategory>('SSC');
   const [motivation, setMotivation] = useState('');
 
@@ -38,18 +49,11 @@ const AddExamModal: React.FC<AddExamModalProps> = ({ visible, onClose, onAddExam
     }
 
     if (!examDate.trim()) {
-      Alert.alert('Error', 'Please enter exam date');
+      Alert.alert('Error', 'Please select exam date');
       return;
     }
 
-    // Parse date - handle YYYY-MM-DD format
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(examDate)) {
-      Alert.alert('Error', 'Please use format: YYYY-MM-DD');
-      return;
-    }
-
-    // Create full date string with time
+    // Create full date string with time (10:00 local)
     const fullDateString = examDate + 'T10:00:00';
     const parsedDate = new Date(fullDateString);
     if (isNaN(parsedDate.getTime())) {
@@ -78,6 +82,7 @@ const AddExamModal: React.FC<AddExamModalProps> = ({ visible, onClose, onAddExam
     setExamName('');
     setDescription('');
     setExamDate('');
+    setDateValue(undefined);
     setSelectedCategory('SSC');
     setMotivation('');
   };
@@ -142,15 +147,31 @@ const AddExamModal: React.FC<AddExamModalProps> = ({ visible, onClose, onAddExam
 
           {/* Exam Date */}
           <View style={styles.section}>
-            <Text style={styles.label}>Exam Date * (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="2026-06-15"
-              value={examDate}
-              onChangeText={setExamDate}
-              keyboardType="default"
-              placeholderTextColor="#ccc"
-            />
+            <Text style={styles.label}>Exam Date *</Text>
+            <Pressable
+              style={[styles.input, styles.datePressable]}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={{ color: examDate ? '#333' : '#999' }}>
+                {examDate || 'Select exam date'}
+              </Text>
+            </Pressable>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={dateValue || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+                onChange={(event, selectedDate) => {
+                  // On Android the picker closes automatically; on iOS we may get undefined when cancelled
+                  setShowDatePicker(Platform.OS === 'ios');
+                  if (selectedDate) {
+                    setDateValue(selectedDate);
+                    setExamDate(formatDateYYYYMMDD(selectedDate));
+                  }
+                }}
+              />
+            )}
           </View>
 
           {/* Description */}
@@ -291,6 +312,10 @@ const styles = StyleSheet.create({
   },
   categoryButtonTextActive: {
     color: '#fff',
+  },
+  datePressable: {
+    justifyContent: 'center',
+    height: 48,
   },
   infoBox: {
     backgroundColor: '#fff3cd',

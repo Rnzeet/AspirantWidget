@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Exam } from '../data/types';
 
 const EXAMS_STORAGE_KEY = '@aspirant_exams';
+const LAST_RESET_KEY = '@aspirant_last_daily_reset';
 
 export const storageService = {
   // Save all exams
@@ -105,8 +106,39 @@ export const storageService = {
   clearAllData: async (): Promise<void> => {
     try {
       await AsyncStorage.removeItem(EXAMS_STORAGE_KEY);
+      await AsyncStorage.removeItem(LAST_RESET_KEY);
     } catch (error) {
       console.error('Error clearing data:', error);
+      throw error;
+    }
+  },
+
+  // Reset daily targets once per day (if not already reset today)
+  resetDailyTargetsIfNeeded: async (): Promise<void> => {
+    try {
+      const lastReset = await AsyncStorage.getItem(LAST_RESET_KEY);
+      const today = new Date().toISOString().split('T')[0];
+      if (lastReset === today) return; // already reset today
+
+      const exams = await storageService.getExams();
+      let changed = false;
+      const updated = exams.map(exam => {
+        const resetTargets = exam.dailyTargets.map(t => {
+          if (t.completed) {
+            changed = true;
+            return { ...t, completed: false };
+          }
+          return t;
+        });
+        return { ...exam, dailyTargets: resetTargets };
+      });
+
+      if (changed) {
+        await storageService.saveExams(updated);
+      }
+      await AsyncStorage.setItem(LAST_RESET_KEY, today);
+    } catch (error) {
+      console.error('Error resetting daily targets:', error);
       throw error;
     }
   },

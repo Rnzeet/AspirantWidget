@@ -11,6 +11,7 @@ const DashboardScreen = () => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showTargetsModal, setShowTargetsModal] = useState(false);
 
   // Initialize app
   useEffect(() => {
@@ -21,17 +22,23 @@ const DashboardScreen = () => {
 
         // Load exams from storage
         const storedExams = await storageService.getExams();
+
+        // Reset daily targets once per day if needed
+        await storageService.resetDailyTargetsIfNeeded();
+
+        // reload after reset
+        const afterResetExams = await storageService.getExams();
         
-        if (storedExams.length === 0) {
+        if (afterResetExams.length === 0) {
           // First time - use dummy data
           await storageService.saveExams(DUMMY_EXAMS);
           setExams(DUMMY_EXAMS);
         } else {
-          setExams(storedExams);
+          setExams(afterResetExams);
         }
 
         // Schedule notifications for all exams
-        storedExams.forEach(exam => {
+        (afterResetExams).forEach(exam => {
           notificationService.scheduleExamReminder(exam);
           notificationService.scheduleAlertCritical(exam);
           notificationService.scheduleDailyMotivation(exam);
@@ -71,6 +78,16 @@ const DashboardScreen = () => {
     }
   };
 
+  const handleUpdateExam = async (updatedExam: Exam) => {
+    try {
+      await storageService.updateExam(updatedExam);
+      const stored = await storageService.getExams();
+      setExams(stored);
+    } catch (error) {
+      console.error('Error updating exam:', error);
+    }
+  };
+
   const totalDaysStudying = exams.reduce((acc, exam) => acc + exam.studyStreak, 0);
   const criticalExams = exams.filter(e => {
     const now = new Date();
@@ -78,6 +95,14 @@ const DashboardScreen = () => {
     const daysLeft = (examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return daysLeft > 0 && daysLeft <= 30;
   }).length;
+  const totalTargets = exams.reduce((acc, exam) => acc + exam.dailyTargets.length, 0);
+  const completedTargets = exams.reduce(
+    (acc, exam) => acc + exam.dailyTargets.filter(t => t.completed).length,
+    0
+  );
+  const targetsPercent = totalTargets > 0 ? Math.round((completedTargets / totalTargets) * 100) : 0;
+  const badgeBgColor = totalTargets === 0 ? '#95a5a6' : (completedTargets === totalTargets ? '#4CAF50' : (completedTargets > 0 ? '#FFC107' : '#bdc3c7'));
+  const badgeTextColor = (totalTargets > 0 && completedTargets === totalTargets) ? '#fff' : '#2c3e50';
 
   if (loading) {
     return (
@@ -110,6 +135,10 @@ const DashboardScreen = () => {
           <Text style={styles.statNumber}>{criticalExams}</Text>
           <Text style={styles.statLabel}>Critical</Text>
         </View>
+        <Pressable style={styles.statBox} onPress={() => setShowTargetsModal(true)}>
+          <Text style={styles.statNumber}>{totalTargets}</Text>
+          <Text style={styles.statLabel}>Targets</Text>
+        </Pressable>
       </View>
 
       {/* Exams List */}
@@ -121,6 +150,7 @@ const DashboardScreen = () => {
               key={exam.id}
               exam={exam}
               onDelete={handleDeleteExam}
+              onUpdateExam={handleUpdateExam}
             />
           ))
         ) : (
@@ -139,6 +169,53 @@ const DashboardScreen = () => {
         onClose={() => setShowAddModal(false)}
         onAddExam={handleAddExam}
       />
+
+      {/* Targets Modal */}
+      <Modal visible={showTargetsModal} animationType="slide">
+        <View style={modalStyles.container}>
+          <View style={modalStyles.header}>
+            <View style={modalStyles.headerLeft}>
+              <Text style={modalStyles.title}>All Daily Targets</Text>
+              <View style={[modalStyles.badge, { backgroundColor: badgeBgColor }] }>
+                <Text style={[modalStyles.badgeText, { color: badgeTextColor }]}>{completedTargets}/{totalTargets} · {targetsPercent}%</Text>
+              </View>
+            </View>
+            <Pressable onPress={() => setShowTargetsModal(false)}>
+              <Text style={modalStyles.close}>Close</Text>
+            </Pressable>
+          </View>
+          <ScrollView style={modalStyles.list}>
+            {exams.map(exam => (
+              <View key={exam.id} style={modalStyles.examSection}>
+                <Text style={modalStyles.examTitle}>{exam.name}</Text>
+                {exam.dailyTargets.length === 0 ? (
+                  <Text style={modalStyles.noTargets}>No targets for this exam.</Text>
+                ) : (
+                  exam.dailyTargets.map(target => (
+                    <Pressable
+                      key={target.id}
+                      style={modalStyles.targetRow}
+                      onPress={() => {
+                        // toggle and persist via handleUpdateExam
+                        const updated = { ...exam } as Exam;
+                        updated.dailyTargets = updated.dailyTargets.map(t =>
+                          t.id === target.id ? { ...t, completed: !t.completed } : t
+                        );
+                        handleUpdateExam(updated);
+                      }}
+                    >
+                      <Text style={[modalStyles.check, target.completed && modalStyles.checkDone]}>
+                        {target.completed ? '✓' : '○'}
+                      </Text>
+                      <Text style={[modalStyles.targetText, target.completed && modalStyles.targetTextDone]}>{target.title}</Text>
+                    </Pressable>
+                  ))
+                )}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -234,6 +311,85 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f7fa',
+  },
+  header: {
+    paddingTop: 40,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#2c3e50',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  close: {
+    color: '#2ecc71',
+    fontWeight: '700',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  badge: {
+    backgroundColor: '#fff',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
+  badgeText: {
+    color: '#2c3e50',
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  list: {
+    padding: 16,
+  },
+  examSection: {
+    marginBottom: 20,
+  },
+  examTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  noTargets: {
+    color: '#95a5a6',
+    fontStyle: 'italic',
+  },
+  targetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  check: {
+    width: 28,
+    fontSize: 16,
+    color: '#999',
+    marginRight: 8,
+  },
+  checkDone: {
+    color: '#4CAF50',
+  },
+  targetText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  targetTextDone: {
+    color: '#999',
+    textDecorationLine: 'line-through',
   },
 });
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Dimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, Dimensions, TextInput, Alert, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Exam } from '../../data/types';
 import { calculateCountdown, getUrgencyLevel, formatCountdownText, getAlert } from '../../utils/countdownUtils';
 import { styles } from './styles';
@@ -7,9 +8,10 @@ import { styles } from './styles';
 type ExamItemProps = {
   exam: Exam;
   onDelete?: (id: string) => void;
+  onUpdateExam?: (exam: Exam) => void;
 };
 
-const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete }) => {
+const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete, onUpdateExam }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const countdown = calculateCountdown(exam.date);
@@ -19,8 +21,18 @@ const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete }) => {
 
   const completedTargets = exam.dailyTargets.filter(t => t.completed).length;
   const totalTargets = exam.dailyTargets.length;
+  const [newTargetTitle, setNewTargetTitle] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateValue, setDateValue] = useState<Date | undefined>(undefined);
 
   const examDate = new Date(exam.date);
+
+  const formatDateYYYYMMDD = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   return (
     <Pressable
@@ -33,12 +45,35 @@ const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete }) => {
           <View style={styles.examInfoContainer}>
             <Text style={styles.examName}>{exam.name}</Text>
             <Text style={styles.examDescription}>{exam.description}</Text>
-            <Text style={styles.examDate}>{examDate.toLocaleDateString('en-US', { 
-              weekday: 'short',
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })}</Text>
+            <Pressable onPress={() => {
+              setDateValue(examDate);
+              setShowDatePicker(true);
+            }}>
+              <Text style={[styles.examDate, { textDecorationLine: 'underline' }]}>{examDate.toLocaleDateString('en-US', { 
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}</Text>
+            </Pressable>
+            {showDatePicker && (
+              <DateTimePicker
+                value={dateValue || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(Platform.OS === 'ios');
+                  if (selectedDate) {
+                    setDateValue(selectedDate);
+                    // build ISO date with default time at 10:00
+                    const fullDateString = formatDateYYYYMMDD(selectedDate) + 'T10:00:00';
+                    const updated = { ...exam } as Exam;
+                    updated.date = fullDateString;
+                    if (onUpdateExam) onUpdateExam(updated);
+                  }
+                }}
+              />
+            )}
           </View>
 
           {/* Countdown Box */}
@@ -63,20 +98,63 @@ const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete }) => {
         {/* Daily Targets */}
         <View style={styles.targetsSection}>
           <Text style={styles.sectionTitle}>📋 Daily Targets ({completedTargets}/{totalTargets})</Text>
-          {isExpanded && (
-            <View style={styles.targetsList}>
-              {exam.dailyTargets.map(target => (
-                <View key={target.id} style={styles.targetItem}>
-                  <Text style={[styles.targetCheckmark, target.completed && styles.completed]}>
-                    {target.completed ? '✓' : '○'}
-                  </Text>
-                  <Text style={[styles.targetText, target.completed && styles.targetCompleted]}>
-                    {target.title}
-                  </Text>
+            {isExpanded && (
+              <View style={styles.targetsList}>
+                {exam.dailyTargets.map(target => (
+                  <Pressable
+                    key={target.id}
+                    style={styles.targetItem}
+                    onPress={() => {
+                      // toggle completed
+                      const updated = { ...exam } as Exam;
+                      updated.dailyTargets = updated.dailyTargets.map(t =>
+                        t.id === target.id ? { ...t, completed: !t.completed } : t
+                      );
+                      if (onUpdateExam) onUpdateExam(updated);
+                    }}
+                  >
+                    <Text style={[styles.targetCheckmark, target.completed && styles.completed]}>
+                      {target.completed ? '✓' : '○'}
+                    </Text>
+                    <Text style={[styles.targetText, target.completed && styles.targetCompleted]}>
+                      {target.title}
+                    </Text>
+                  </Pressable>
+                ))}
+
+                {/* Add new target */}
+                <View style={styles.addTargetContainer}>
+                  <TextInput
+                    style={styles.addTargetInput}
+                    placeholder="Add new target (e.g., Read Chapter 3)"
+                    value={newTargetTitle}
+                    onChangeText={setNewTargetTitle}
+                  />
+                  <Pressable
+                    style={styles.addTargetButton}
+                    onPress={() => {
+                      const title = newTargetTitle.trim();
+                      if (!title) {
+                        Alert.alert('Error', 'Please enter a target title');
+                        return;
+                      }
+                      const newTarget = {
+                        id: 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                        title,
+                        completed: false,
+                        dueDate: new Date().toISOString(),
+                      } as any;
+                      const updated = { ...exam } as Exam;
+                      updated.dailyTargets = [newTarget, ...updated.dailyTargets];
+                      setNewTargetTitle('');
+                      if (onUpdateExam) onUpdateExam(updated);
+                    }}
+                  >
+                    <Text style={styles.addTargetButtonText}>Add</Text>
+                  </Pressable>
                 </View>
-              ))}
-            </View>
-          )}
+              </View>
+            )}
         </View>
 
         {/* Motivation */}

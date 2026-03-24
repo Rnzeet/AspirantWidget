@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { Exam } from '../data/types';
 import { DUMMY_EXAMS } from '../data/dummyData';
 import ExamItem from '../components/ExamItem/ExamItem';
@@ -12,6 +12,9 @@ const DashboardScreen = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showTargetsModal, setShowTargetsModal] = useState(false);
+  const [editingExamId, setEditingExamId] = useState<string | null>(null);
+  const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
 
   // Initialize app
   useEffect(() => {
@@ -192,23 +195,89 @@ const DashboardScreen = () => {
                   <Text style={modalStyles.noTargets}>No targets for this exam.</Text>
                 ) : (
                   exam.dailyTargets.map(target => (
-                    <Pressable
-                      key={target.id}
-                      style={modalStyles.targetRow}
-                      onPress={() => {
-                        // toggle and persist via handleUpdateExam
-                        const updated = { ...exam } as Exam;
-                        updated.dailyTargets = updated.dailyTargets.map(t =>
-                          t.id === target.id ? { ...t, completed: !t.completed } : t
-                        );
-                        handleUpdateExam(updated);
-                      }}
-                    >
-                      <Text style={[modalStyles.check, target.completed && modalStyles.checkDone]}>
-                        {target.completed ? '✓' : '○'}
-                      </Text>
-                      <Text style={[modalStyles.targetText, target.completed && modalStyles.targetTextDone]}>{target.title}</Text>
-                    </Pressable>
+                    <View key={target.id} style={[modalStyles.targetRow, { justifyContent: 'space-between' }]}>
+                      <Pressable
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                        onPress={() => {
+                          // toggle and persist via handleUpdateExam
+                          const updated = { ...exam } as Exam;
+                          updated.dailyTargets = updated.dailyTargets.map(t =>
+                            t.id === target.id ? { ...t, completed: !t.completed } : t
+                          );
+                          handleUpdateExam(updated);
+                        }}
+                      >
+                        <Text style={[modalStyles.check, target.completed && modalStyles.checkDone]}>
+                          {target.completed ? '✓' : '○'}
+                        </Text>
+                        {editingExamId === exam.id && editingTargetId === target.id ? (
+                          <TextInput
+                            style={modalStyles.editInput}
+                            value={editingText}
+                            onChangeText={setEditingText}
+                            placeholder="Edit target"
+                          />
+                        ) : (
+                          <Text style={[modalStyles.targetText, target.completed && modalStyles.targetTextDone]}>{target.title}</Text>
+                        )}
+                      </Pressable>
+
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        {editingExamId === exam.id && editingTargetId === target.id ? (
+                          <>
+                            <Pressable
+                              style={[modalStyles.editBtn]}
+                              onPress={async () => {
+                                const newTitle = editingText ? editingText.trim() : '';
+                                if (newTitle) {
+                                  const updated = { ...exam } as Exam;
+                                  updated.dailyTargets = updated.dailyTargets.map(t => t.id === target.id ? { ...t, title: newTitle } : t);
+                                  await handleUpdateExam(updated);
+                                }
+                                setEditingExamId(null);
+                                setEditingTargetId(null);
+                                setEditingText('');
+                              }}
+                            >
+                              <Text style={modalStyles.editBtnText}>Save</Text>
+                            </Pressable>
+                            <Pressable
+                              style={[modalStyles.deleteBtn]}
+                              onPress={() => {
+                                setEditingExamId(null);
+                                setEditingTargetId(null);
+                                setEditingText('');
+                              }}
+                            >
+                              <Text style={modalStyles.deleteBtnText}>Cancel</Text>
+                            </Pressable>
+                          </>
+                        ) : (
+                          <>
+                            <Pressable
+                              style={[modalStyles.editBtn]}
+                              onPress={() => {
+                                setEditingExamId(exam.id);
+                                setEditingTargetId(target.id);
+                                setEditingText(target.title);
+                              }}
+                            >
+                              <Text style={modalStyles.editBtnText}>Edit</Text>
+                            </Pressable>
+                            <Pressable
+                              style={[modalStyles.deleteBtn]}
+                              onPress={() => {
+                                const updated = { ...exam } as Exam;
+                                updated.dailyTargets = updated.dailyTargets.filter(t => t.id !== target.id);
+                                handleUpdateExam(updated);
+                              }}
+                            >
+                              <Text style={modalStyles.deleteBtnText}>Del</Text>
+                            </Pressable>
+                          </>
+                        )}
+                      </View>
+                    </View>
                   ))
                 )}
               </View>
@@ -356,6 +425,15 @@ const modalStyles = StyleSheet.create({
   list: {
     padding: 16,
   },
+  editInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    minWidth: 120,
+    marginRight: 8,
+  },
   examSection: {
     marginBottom: 20,
   },
@@ -390,6 +468,26 @@ const modalStyles = StyleSheet.create({
   targetTextDone: {
     color: '#999',
     textDecorationLine: 'line-through',
+  },
+  editBtn: {
+    backgroundColor: '#3498db',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  editBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  deleteBtn: {
+    backgroundColor: '#ffebee',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  deleteBtnText: {
+    color: '#F44336',
+    fontWeight: '700',
   },
 });
 

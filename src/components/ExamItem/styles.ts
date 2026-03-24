@@ -167,6 +167,22 @@ export const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
   },
+  editButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#3498db',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  deleteTargetButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#ffebee',
+  },
   motivationText: {
     fontSize: 13,
     fontWeight: '600',

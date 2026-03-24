@@ -24,6 +24,8 @@ const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete, onUpdateExam }) => 
   const [newTargetTitle, setNewTargetTitle] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateValue, setDateValue] = useState<Date | undefined>(undefined);
+  const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
 
   const examDate = new Date(exam.date);
 
@@ -101,25 +103,83 @@ const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete, onUpdateExam }) => 
             {isExpanded && (
               <View style={styles.targetsList}>
                 {exam.dailyTargets.map(target => (
-                  <Pressable
-                    key={target.id}
-                    style={styles.targetItem}
-                    onPress={() => {
-                      // toggle completed
-                      const updated = { ...exam } as Exam;
-                      updated.dailyTargets = updated.dailyTargets.map(t =>
-                        t.id === target.id ? { ...t, completed: !t.completed } : t
-                      );
-                      if (onUpdateExam) onUpdateExam(updated);
-                    }}
-                  >
-                    <Text style={[styles.targetCheckmark, target.completed && styles.completed]}>
-                      {target.completed ? '✓' : '○'}
-                    </Text>
-                    <Text style={[styles.targetText, target.completed && styles.targetCompleted]}>
-                      {target.title}
-                    </Text>
-                  </Pressable>
+                  <View key={target.id} style={styles.targetItem}>
+                    <Pressable
+                      style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                      onPress={() => {
+                        // toggle completed
+                        const updated = { ...exam } as Exam;
+                        updated.dailyTargets = updated.dailyTargets.map(t =>
+                          t.id === target.id ? { ...t, completed: !t.completed } : t
+                        );
+                        if (onUpdateExam) onUpdateExam(updated);
+                      }}
+                    >
+                      <Text style={[styles.targetCheckmark, target.completed && styles.completed]}>
+                        {target.completed ? '✓' : '○'}
+                      </Text>
+                      {editingTargetId === target.id ? (
+                        <TextInput
+                          style={styles.addTargetInput}
+                          value={editingText}
+                          onChangeText={setEditingText}
+                        />
+                      ) : (
+                        <Text style={[styles.targetText, target.completed && styles.targetCompleted]}>
+                          {target.title}
+                        </Text>
+                      )}
+                    </Pressable>
+                    {/* Edit / Delete buttons */}
+                    {editingTargetId === target.id ? (
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <Pressable
+                          style={styles.addTargetButton}
+                          onPress={() => {
+                            const title = editingText.trim();
+                            if (!title) {
+                              Alert.alert('Error', 'Please enter a target title');
+                              return;
+                            }
+                            const updated = { ...exam } as Exam;
+                            updated.dailyTargets = updated.dailyTargets.map(t =>
+                              t.id === target.id ? { ...t, title } : t
+                            );
+                            setEditingTargetId(null);
+                            setEditingText('');
+                            if (onUpdateExam) onUpdateExam(updated);
+                          }}
+                        >
+                          <Text style={styles.addTargetButtonText}>Save</Text>
+                        </Pressable>
+                        <Pressable
+                          style={[styles.addTargetButton, { backgroundColor: '#ecf0f1' }]}
+                          onPress={() => { setEditingTargetId(null); setEditingText(''); }}
+                        >
+                          <Text style={[styles.addTargetButtonText, { color: '#2c3e50' }]}>Cancel</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <Pressable
+                          style={styles.addTargetButton}
+                          onPress={() => { setEditingTargetId(target.id); setEditingText(target.title); }}
+                        >
+                          <Text style={styles.addTargetButtonText}>Edit</Text>
+                        </Pressable>
+                        <Pressable
+                          style={[styles.addTargetButton, { backgroundColor: '#ffebee' }]}
+                          onPress={() => {
+                            const updated = { ...exam } as Exam;
+                            updated.dailyTargets = updated.dailyTargets.filter(t => t.id !== target.id);
+                            if (onUpdateExam) onUpdateExam(updated);
+                          }}
+                        >
+                          <Text style={[styles.addTargetButtonText, { color: '#F44336' }]}>Del</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
                 ))}
 
                 {/* Add new target */}

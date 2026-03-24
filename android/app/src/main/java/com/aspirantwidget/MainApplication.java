@@ -57,6 +57,31 @@ public class MainApplication extends Application implements ReactApplication {
       // If you opted-in for the New Architecture, we load the native entry point for this app.
       DefaultNewArchitectureEntryPoint.load();
     }
+    // Attempt to initialize Firebase only if the Firebase SDK is present
+    // AND the google-services configuration resource exists. This prevents
+    // calling initializeApp when `google-services.json` is missing which
+    // would cause a runtime "Please set a valid API key" error.
+    try {
+      Class.forName("com.google.firebase.FirebaseApp");
+      // Check if google_app_id resource is present (added by google-services plugin)
+      int googleAppIdRes = getResources().getIdentifier("google_app_id", "string", getPackageName());
+      if (googleAppIdRes != 0) {
+        Class<?> firebaseAppClass = Class.forName("com.google.firebase.FirebaseApp");
+        java.lang.reflect.Method getAppsMethod = firebaseAppClass.getMethod("getApps", android.content.Context.class);
+        java.util.List<?> apps = (java.util.List<?>) getAppsMethod.invoke(null, this);
+        if (apps == null || apps.isEmpty()) {
+          java.lang.reflect.Method initializeAppMethod = firebaseAppClass.getMethod("initializeApp", android.content.Context.class);
+          initializeAppMethod.invoke(null, this);
+        }
+      } else {
+        // No google-app-id configured; skip Firebase initialization.
+      }
+    } catch (ClassNotFoundException cnfe) {
+      // Firebase SDK not present — nothing to initialize.
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+
     ReactNativeFlipper.initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
   }
 }

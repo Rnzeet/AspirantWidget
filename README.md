@@ -1,79 +1,247 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🎓 Exam Aspirant Widget
 
-# Getting Started
+A comprehensive React Native app for government exam aspirants to track exam countdowns, daily targets, study streaks, and receive smart notifications.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## ✨ Features
 
-## Step 1: Start the Metro Server
+- 📅 **Smart Countdown** - Color-coded urgency (🟢 >60d, 🟡 30-60d, 🔴 <30d)
+- 📋 **Daily Targets** - Track daily study goals with completion status
+- 🔥 **Study Streak** - Monitor consecutive study days
+- 🎯 **Smart Alerts** - Context-aware motivational messages & reminders
+- 📊 **Progress Analytics** - Beautiful charts showing exam progress
+- 🏠 **Home Screen Widgets** - Android & iOS native widgets for quick access
+- 🔔 **Push Notifications** - Daily motivation, exam reminders, critical alerts
+- 💾 **Data Persistence** - All exams saved locally with AsyncStorage
+- 📚 **Multi-Exam Support** - Track SSC, UPSC, Banking, RBI, and more
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## 🚀 Quick Start
 
-To start Metro, run the following command from the _root_ of your React Native project:
+### Prerequisites
+- Node.js 16+
+- React Native 0.72.7+
+- Android SDK (for Android development)
+- Xcode (for iOS development)
 
+### Installation
+
+1. **Clone and install dependencies:**
 ```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+cd AspirantWidget
+npm install
 ```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
-
+2. **Install pods (iOS only):**
 ```bash
-# using npm
+cd ios && pod install && cd ..
+```
+
+3. **Configure notifications** (see FEATURE_GUIDE.md for details)
+
+4. **Run the app:**
+
+**Android:**
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### For iOS
+**iOS:**
+```bash
+npm run ios
+```
+
+## 📱 App Structure
+
+```
+src/
+├── components/
+│   ├── AddExamModal/       # Add exam form
+│   ├── ExamItem/           # Exam card component
+│   └── ProgressAnalytics/  # Charts & analytics
+├── screens/
+│   └── DashboardScreen.tsx # Main dashboard
+├── services/
+│   ├── storageService.ts   # AsyncStorage operations
+│   └── notificationService.ts  # Push notifications
+├── data/
+│   ├── types.ts            # TypeScript interfaces
+│   └── dummyData.ts        # Sample data
+└── utils/
+    └── countdownUtils.ts   # Countdown calculations
+```
+
+## 🎯 Key Features Explained
+
+### Smart Countdown
+- Shows days and hours remaining
+- Auto-updates daily
+- Color changes based on urgency
+- Includes smart motivational alerts
+
+### Daily Targets
+- Add study goals for each exam
+- Mark targets as completed
+- Track completion percentage
+- Get reminders for uncompleted targets
+
+### Study Streak
+- Track consecutive study days per exam
+- Motivational 🔥 display
+- Helps build study consistency
+- Auto-calculated from lastStudiedDate
+
+### Push Notifications
+- Daily motivation at 8 AM
+- Exam reminders 24 hours before
+- Critical alerts when < 7 days left
+- Custom target reminders
+
+### Home Screen Widgets
+**Android:**
+- Colorful countdown display
+- Streak counter
+- Tap to open app
+- Hourly auto-update
+
+**iOS:**
+- WidgetKit support
+- Small & Medium sizes
+- Real-time updates
+- Beautiful UI
+
+### Analytics Dashboard
+- Study streak comparison
+- Target completion rate
+- Exam readiness progress
+- Summary statistics
+
+## 💾 Data Persistence
+
+All data is automatically saved to device storage:
+- Exams and their details
+- Daily targets
+- Study streaks
+- Progress data
+
+No internet connection required after initial setup!
+
+## 📖 Detailed Setup
+
+For comprehensive setup instructions including:
+- Native widget configuration
+- Push notification setup
+- Android & iOS specific configuration
+- Firebase setup for production
+
+See [FEATURE_GUIDE.md](FEATURE_GUIDE.md)
+
+## 🔧 Development
+
+### Available Scripts
 
 ```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npm start          # Start development server
+npm run android    # Build and run on Android
+npm run ios       # Build and run on iOS
+npm test          # Run tests
+npm run lint      # Run ESLint
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+### Technologies Used
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+- **React Native** - Cross-platform mobile framework
+- **TypeScript** - Type safety
+- **AsyncStorage** - Local data persistence
+- **React Native Push Notification** - Push alerts
+- **React Native Chart Kit** - Beautiful charts
+- **WidgetKit** (iOS) - Native widgets
+- **AppWidget** (Android) - Native widgets
 
-## Step 3: Modifying your App
+## 📚 Exam Categories Supported
 
-Now that you have successfully run the app, let's modify it.
+- 🎓 **SSC** - Staff Selection Commission
+- 🏛️ **UPSC** - Union Public Service Commission
+- 🏦 **Banking** - IBPS, SBI, etc.
+- 🏦 **RBI** - Reserve Bank of India
+- 📝 **Other** - Custom exams
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+## 🎨 UI/UX Features
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+- Clean, minimal design
+- Color-coded urgency indicators
+- Intuitive navigation
+- Beautiful gradient backgrounds
+- Smooth animations
+- Responsive layout
 
-## Congratulations! :tada:
+## 🐛 Troubleshooting
 
-You've successfully run and modified your React Native App. :partying_face:
+**Notifications not working?**
+- Check app has notification permissions
+- Verify push notification service is initialized
+- Check device notification settings
 
-### Now what?
+**Widget not updating?**
+- Rebuild app with `npm run android/ios`
+- Check storage service is working
+- Verify widget is registered in manifest
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+**Data not persisting?**
+- Check AsyncStorage permissions
+- Verify storage service methods are called
+- Check device storage space
 
-# Troubleshooting
+## 📝 Example Usage
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+### Add an Exam
+```typescript
+const newExam: Exam = {
+  id: 'exam_1',
+  name: 'SSC CGL 2026',
+  date: '2026-06-15T10:00:00',
+  category: 'SSC',
+  description: 'Combined Graduate Level Examination',
+  dailyTargets: [],
+  studyStreak: 0,
+  motivation: 'You can do this! 💪'
+};
 
-# Learn More
+await storageService.addExam(newExam);
+```
 
-To learn more about React Native, take a look at the following resources:
+### Schedule Notifications
+```typescript
+// Daily motivation at 8 AM
+notificationService.scheduleDailyMotivation(exam, 8, 0);
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+// Exam reminder 24 hours before
+notificationService.scheduleExamReminder(exam);
+
+// Critical alert for exams within 7 days
+notificationService.scheduleAlertCritical(exam);
+```
+
+## 🎯 Future Roadmap
+
+- [ ] Cloud sync across devices
+- [ ] Social features (share progress)
+- [ ] Study session timer
+- [ ] Detailed progress reports
+- [ ] Mock test integration
+- [ ] Notes and resources section
+- [ ] Study group features
+- [ ] Achievement badges
+
+## 📞 Support
+
+For issues, feature requests, or questions:
+1. Check FEATURE_GUIDE.md for detailed documentation
+2. Review troubleshooting section
+3. Check existing code comments
+
+## 📄 License
+
+This project is created for educational purposes.
+
+---
+
+**Good luck with your exam prep! 🚀📚**

@@ -5,6 +5,8 @@ export interface DailyTarget {
   title: string;
   completed: boolean;
   dueDate: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface Exam {

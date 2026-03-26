@@ -92,7 +92,34 @@ export const storageService = {
       if (exam) {
         const target = exam.dailyTargets.find(t => t.id === targetId);
         if (target) {
-          target.completed = true;
+          const now = new Date();
+          
+          // Toggle completion status
+          target.completed = !target.completed;
+
+          // If now completed, handle times
+          if (target.completed) {
+            const dueDate = new Date(target.dueDate);
+            dueDate.setHours(23, 59, 59, 999);
+            const isDeadlineMissed = now > dueDate;
+
+            if (isDeadlineMissed) {
+              // Completed, but after deadline, so no times.
+              target.startTime = undefined;
+              target.endTime = undefined;
+            } else {
+              // Completed on time
+              target.endTime = now.toISOString();
+              if (!target.startTime) {
+                target.startTime = now.toISOString();
+              }
+            }
+          } else { 
+            // If now not completed (unmarked), always reset times
+            target.startTime = undefined;
+            target.endTime = undefined;
+          }
+
           await storageService.saveExams(exams);
         }
       }
@@ -124,9 +151,14 @@ export const storageService = {
       let changed = false;
       const updated = exams.map(exam => {
         const resetTargets = exam.dailyTargets.map(t => {
-          if (t.completed) {
+          if (t.completed || t.startTime || t.endTime) {
             changed = true;
-            return { ...t, completed: false };
+            return { 
+              ...t, 
+              completed: false,
+              startTime: undefined,
+              endTime: undefined
+            };
           }
           return t;
         });

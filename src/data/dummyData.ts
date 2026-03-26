@@ -12,7 +12,7 @@ export const DUMMY_EXAMS: Exam[] = [
     motivation: 'You\'re doing great! Keep up the momentum 🚀',
     dailyTargets: [
       { id: 't1', title: 'Complete 2 chapters in Quant', completed: true, dueDate: '2026-03-24' },
-      { id: 't2', title: 'Revise English Grammar', completed: false, dueDate: '2026-03-24' },
+      { id: 't2', title: 'Revise English Grammar', completed: false, dueDate: '2026-03-24', startTime: '10:00 AM', endTime: '11:00 AM' },
       { id: 't3', title: 'Solve 50 practice questions', completed: true, dueDate: '2026-03-24' },
     ],
   },

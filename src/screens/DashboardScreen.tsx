@@ -17,6 +17,38 @@ const DashboardScreen = () => {
   const [editingText, setEditingText] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(Appearance.getColorScheme() === 'dark');
 
+  const [stopwatchVisible, setStopwatchVisible] = useState(false);
+  const [stopwatchTime, setStopwatchTime] = useState(0);
+  const [stopwatchRunning, setStopwatchRunning] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (stopwatchRunning) {
+      interval = setInterval(() => {
+        setStopwatchTime(prevTime => prevTime + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [stopwatchRunning]);
+
+  const handleStartStop = () => {
+    setStopwatchRunning(!stopwatchRunning);
+  };
+
+  const handleReset = () => {
+    setStopwatchTime(0);
+    setStopwatchRunning(false);
+  };
+
+  const formatStopwatchTime = (time: number) => {
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = time % 60;
+    return [hours, minutes, seconds]
+      .map(v => v.toString().padStart(2, '0'))
+      .join(':');
+  };
+
   useEffect(() => {
     const sub = Appearance.addChangeListener(({ colorScheme }) => {
       setIsDarkMode(colorScheme === 'dark');
@@ -105,10 +137,20 @@ const DashboardScreen = () => {
     }
   };
 
+  const handleToggleTarget = async (examId: string, targetId: string) => {
+    try {
+      await storageService.completeTarget(examId, targetId);
+      const stored = await storageService.getExams();
+      setExams(stored);
+    } catch (error) {
+      console.error('Error toggling target:', error);
+    }
+  };
+
   const theme = {
     background: isDarkMode ? '#0d1220' : '#f5f7fa',
     cardBackground: isDarkMode ? '#162039' : '#fff',
-    text: isDarkMode ? '#f4f7ff' : '#2c3e50',
+        text: isDarkMode ? '#FFFFFF' : '#2c3e50',
     subtitle: isDarkMode ? '#c3d1ed' : '#bdc3c7',
     border: isDarkMode ? '#324163' : '#eaeaea',
     sectionTitle: isDarkMode ? '#b9c8ee' : '#2c3e50',
@@ -130,7 +172,7 @@ const DashboardScreen = () => {
   );
   const targetsPercent = totalTargets > 0 ? Math.round((completedTargets / totalTargets) * 100) : 0;
   const badgeBgColor = totalTargets === 0 ? '#95a5a6' : (completedTargets === totalTargets ? '#4CAF50' : (completedTargets > 0 ? '#FFC107' : '#bdc3c7'));
-  const badgeTextColor = (totalTargets > 0 && completedTargets === totalTargets) ? '#fff' : '#2c3e50';
+  const badgeTextColor = (totalTargets > 0 && completedTargets === totalTargets) ? '#fff' : (isDarkMode ? '#fff' : '#2c3e50');
 
   if (loading) {
     return (
@@ -181,7 +223,12 @@ const DashboardScreen = () => {
 
       {/* Exams List */}
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.sectionTitle, { color: theme.sectionTitle }]}>📅 Your Exams</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.sectionTitle }]}>📅 Your Exams</Text>
+          <Pressable style={styles.stopwatchButton} onPress={() => setStopwatchVisible(true)}>
+            <Text style={styles.stopwatchButtonText}>Stopwatch</Text>
+          </Pressable>
+        </View>
         {exams.length > 0 ? (
           exams.map(exam => (
             <ExamItem
@@ -189,6 +236,7 @@ const DashboardScreen = () => {
               exam={exam}
               onDelete={handleDeleteExam}
               onUpdateExam={handleUpdateExam}
+              onToggleTarget={handleToggleTarget}
               isDarkMode={isDarkMode}
             />
           ))
@@ -208,6 +256,31 @@ const DashboardScreen = () => {
         onClose={() => setShowAddModal(false)}
         onAddExam={handleAddExam}
       />
+
+      {/* Stopwatch Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={stopwatchVisible}
+        onRequestClose={() => setStopwatchVisible(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.stopwatchTime}>{formatStopwatchTime(stopwatchTime)}</Text>
+            <View style={styles.stopwatchControls}>
+              <Pressable style={styles.stopwatchControlButton} onPress={handleStartStop}>
+                <Text style={styles.stopwatchControlButtonText}>{stopwatchRunning ? 'Stop' : 'Start'}</Text>
+              </Pressable>
+              <Pressable style={styles.stopwatchControlButton} onPress={handleReset}>
+                <Text style={styles.stopwatchControlButtonText}>Reset</Text>
+              </Pressable>
+            </View>
+            <Pressable style={styles.stopwatchCloseButton} onPress={() => setStopwatchVisible(false)}>
+              <Text style={styles.stopwatchCloseButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* Targets Modal */}
       <Modal visible={showTargetsModal} animationType="slide">
@@ -234,27 +307,23 @@ const DashboardScreen = () => {
                     <View key={target.id} style={[modalStyles.targetRow, { justifyContent: 'space-between' }]}>
                       <Pressable
                         style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-                        onPress={() => {
-                          // toggle and persist via handleUpdateExam
-                          const updated = { ...exam } as Exam;
-                          updated.dailyTargets = updated.dailyTargets.map(t =>
-                            t.id === target.id ? { ...t, completed: !t.completed } : t
-                          );
-                          handleUpdateExam(updated);
-                        }}
+                        onPress={() => handleToggleTarget(exam.id, target.id)}
                       >
-                        <Text style={[modalStyles.check, target.completed && modalStyles.checkDone]}>
+                        <Text style={[modalStyles.check, target.completed && modalStyles.checkDone, { color: isDarkMode ? (target.completed ? '#4CAF50' : '#fff') : (target.completed ? '#4CAF50' : '#999') }]}>
                           {target.completed ? '✓' : '○'}
                         </Text>
-                        {editingExamId === exam.id && editingTargetId === target.id ? (
+                                                {editingExamId === exam.id && editingTargetId === target.id ? (
                           <TextInput
-                            style={modalStyles.editInput}
+                            style={[modalStyles.editInput, { color: theme.text }]}
                             value={editingText}
                             onChangeText={setEditingText}
                             placeholder="Edit target"
+                            placeholderTextColor={theme.subtitle}
                           />
                         ) : (
-                          <Text style={[modalStyles.targetText, target.completed && modalStyles.targetTextDone]}>{target.title}</Text>
+                          <Text style={[modalStyles.targetText, target.completed && modalStyles.targetTextDone, { color: isDarkMode ? (target.completed ? theme.subtitle : theme.text) : (target.completed ? '#999' : '#333') }]}>
+                            {target.title}
+                          </Text>
                         )}
                       </Pressable>
 
@@ -407,6 +476,22 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     marginBottom: 12,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 16,
+  },
+  stopwatchButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  stopwatchButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
   emptyText: {
     textAlign: 'center',
     color: '#95a5a6',
@@ -424,6 +509,58 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  stopwatchTime: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  stopwatchControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 20,
+  },
+  stopwatchControlButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  stopwatchControlButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  stopwatchCloseButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  stopwatchCloseButtonText: {
+    color: '#fff',
     fontWeight: '700',
   },
 });
@@ -478,7 +615,6 @@ const modalStyles = StyleSheet.create({
     borderRadius: 6,
     minWidth: 120,
     marginRight: 8,
-    color:"black"
   },
   examSection: {
     marginBottom: 20,
@@ -509,7 +645,6 @@ const modalStyles = StyleSheet.create({
   },
   targetText: {
     fontSize: 14,
-    color: '#333',
   },
   targetTextDone: {
     color: '#999',

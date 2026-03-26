@@ -113,13 +113,15 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 0,
   },
+  targetItemContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
   targetItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
   },
   targetCheckmark: {
     fontSize: 16,
@@ -140,6 +142,17 @@ export const styles = StyleSheet.create({
   targetCompleted: {
     color: '#adb5bd',
     textDecorationLine: 'line-through',
+  },
+  timerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  timerText: {
+    fontSize: 12,
+    color: '#3498db',
+    fontWeight: '600',
   },
   addTargetContainer: {
     flexDirection: 'row',
@@ -210,5 +223,47 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2
+  },
+  buttonClose: {
+    backgroundColor: "#2196F3",
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center"
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center"
+  },
+  countdownText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  }
 });
-

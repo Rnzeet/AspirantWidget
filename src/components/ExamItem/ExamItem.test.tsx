@@ -10,8 +10,11 @@ jest.useFakeTimers().setSystemTime(new Date(MOCK_NOW));
 const baseExam: Exam = {
   id: '1',
   name: 'Test Exam',
-  color: '#ff0000',
   date: new Date().toISOString(),
+  dailyTargets: [],
+  studyStreak: 0,
+  category: 'Other',
+  description: 'Test Description',
 };
 
 const onDeleteMock = jest.fn();

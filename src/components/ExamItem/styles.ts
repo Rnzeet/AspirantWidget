@@ -156,6 +156,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     fontSize: 13,
+    color:"black"
   },
   addTargetButton: {
     backgroundColor: '#3498db',

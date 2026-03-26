@@ -433,7 +433,7 @@ const modalStyles = StyleSheet.create({
     borderRadius: 6,
     minWidth: 120,
     marginRight: 8,
-    color:"black
+    color:"black"
   },
   examSection: {
     marginBottom: 20,

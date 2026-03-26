@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, StyleSheet, ActivityIndicator, TextInput, Appearance } from 'react-native';
 import { Exam } from '../data/types';
 import { DUMMY_EXAMS } from '../data/dummyData';
 import ExamItem from '../components/ExamItem/ExamItem';
@@ -15,6 +15,20 @@ const DashboardScreen = () => {
   const [editingExamId, setEditingExamId] = useState<string | null>(null);
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<string>('');
+  const [isDarkMode, setIsDarkMode] = useState(Appearance.getColorScheme() === 'dark');
+
+  useEffect(() => {
+    const sub = Appearance.addChangeListener(({ colorScheme }) => {
+      setIsDarkMode(colorScheme === 'dark');
+    });
+    return () => sub.remove();
+  }, []);
+
+  const formatLocalTime = (isoTime?: string | null) => {
+    if (!isoTime) return '-';
+    const d = new Date(isoTime);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
 
   // Initialize app
   useEffect(() => {
@@ -91,6 +105,17 @@ const DashboardScreen = () => {
     }
   };
 
+  const theme = {
+    background: isDarkMode ? '#0d1220' : '#f5f7fa',
+    cardBackground: isDarkMode ? '#162039' : '#fff',
+    text: isDarkMode ? '#f4f7ff' : '#2c3e50',
+    subtitle: isDarkMode ? '#c3d1ed' : '#bdc3c7',
+    border: isDarkMode ? '#324163' : '#eaeaea',
+    sectionTitle: isDarkMode ? '#b9c8ee' : '#2c3e50',
+    buttonBg: isDarkMode ? '#2a3a5f' : '#3498db',
+    buttonText: '#fff',
+  };
+
   const totalDaysStudying = exams.reduce((acc, exam) => acc + exam.studyStreak, 0);
   const criticalExams = exams.filter(e => {
     const now = new Date();
@@ -117,36 +142,46 @@ const DashboardScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>📚 Exam Aspirant Widget</Text>
-        <Text style={styles.headerSubtitle}>Your Daily Study Companion</Text>
+      <View style={[styles.header, { backgroundColor: theme.cardBackground }] }>
+        <Text style={[styles.headerTitle,{ color: theme.text }]}>📚 Exam Aspirant Widget</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={[styles.headerSubtitle,{ color: theme.subtitle }]}>Your Daily Study Companion</Text>
+          <Pressable
+            style={[styles.themeToggle, { backgroundColor: theme.buttonBg }]}
+            onPress={() => setIsDarkMode(prev => !prev)}
+          >
+            <Text style={[styles.themeToggleText, { color: theme.buttonText }]}>
+              {isDarkMode ? 'Light' : 'Dark'}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Stats Summary */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{exams.length}</Text>
-          <Text style={styles.statLabel}>Exams</Text>
+      <View style={[styles.statsContainer, { backgroundColor: theme.background }] }>
+        <View style={[styles.statBox, { backgroundColor: theme.cardBackground }] }>
+          <Text style={[styles.statNumber, { color: theme.text }]}>{exams.length}</Text>
+          <Text style={[styles.statLabel, { color: theme.subtitle }]}>Exams</Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{totalDaysStudying}</Text>
-          <Text style={styles.statLabel}>Total Streak</Text>
+        <View style={[styles.statBox, { backgroundColor: theme.cardBackground }] }>
+          <Text style={[styles.statNumber, { color: theme.text }]}>{totalDaysStudying}</Text>
+          <Text style={[styles.statLabel, { color: theme.subtitle }]}>Total Streak</Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{criticalExams}</Text>
-          <Text style={styles.statLabel}>Critical</Text>
+        <View style={[styles.statBox, { backgroundColor: theme.cardBackground }] }>
+          <Text style={[styles.statNumber, { color: theme.text }]}>{criticalExams}</Text>
+          <Text style={[styles.statLabel, { color: theme.subtitle }]}>Critical</Text>
         </View>
-        <Pressable style={styles.statBox} onPress={() => setShowTargetsModal(true)}>
-          <Text style={styles.statNumber}>{totalTargets}</Text>
-          <Text style={styles.statLabel}>Targets</Text>
+        <Pressable style={[styles.statBox, { backgroundColor: theme.cardBackground }]} onPress={() => setShowTargetsModal(true)}>
+          <Text style={[styles.statNumber, { color: theme.text }]}>{totalTargets}</Text>
+          <Text style={[styles.statLabel, { color: theme.subtitle }]}>Targets</Text>
         </Pressable>
       </View>
 
       {/* Exams List */}
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>📅 Your Exams</Text>
+        <Text style={[styles.sectionTitle, { color: theme.sectionTitle }]}>📅 Your Exams</Text>
         {exams.length > 0 ? (
           exams.map(exam => (
             <ExamItem
@@ -154,16 +189,17 @@ const DashboardScreen = () => {
               exam={exam}
               onDelete={handleDeleteExam}
               onUpdateExam={handleUpdateExam}
+              isDarkMode={isDarkMode}
             />
           ))
         ) : (
-          <Text style={styles.emptyText}>No exams added yet. Start by adding one! 🎯</Text>
+          <Text style={[styles.emptyText, { color: theme.subtitle }]}>No exams added yet. Start by adding one! 🎯</Text>
         )}
       </ScrollView>
 
       {/* Add Exam Button */}
-      <Pressable style={styles.addButton} onPress={() => setShowAddModal(true)}>
-        <Text style={styles.addButtonText}>+ Add Exam</Text>
+      <Pressable style={[styles.addButton, { backgroundColor: isDarkMode ? '#2a3a5f' : '#3498db' }]} onPress={() => setShowAddModal(true)}>
+        <Text style={[styles.addButtonText, { color: '#fff' }]}>+ Add Exam</Text>
       </Pressable>
 
       {/* Add Exam Modal */}
@@ -175,10 +211,10 @@ const DashboardScreen = () => {
 
       {/* Targets Modal */}
       <Modal visible={showTargetsModal} animationType="slide">
-        <View style={modalStyles.container}>
-          <View style={modalStyles.header}>
+        <View style={[modalStyles.container, { backgroundColor: isDarkMode ? '#0d1220' : '#f5f7fa' }] }>
+          <View style={[modalStyles.header, { backgroundColor: isDarkMode ? '#1f2d4b' : '#2c3e50' }]}>
             <View style={modalStyles.headerLeft}>
-              <Text style={modalStyles.title}>All Daily Targets</Text>
+              <Text style={[modalStyles.title, { color: isDarkMode ? '#fff' : '#fff' }]}>All Daily Targets</Text>
               <View style={[modalStyles.badge, { backgroundColor: badgeBgColor }] }>
                 <Text style={[modalStyles.badgeText, { color: badgeTextColor }]}>{completedTargets}/{totalTargets} · {targetsPercent}%</Text>
               </View>
@@ -190,9 +226,9 @@ const DashboardScreen = () => {
           <ScrollView style={modalStyles.list}>
             {exams.map(exam => (
               <View key={exam.id} style={modalStyles.examSection}>
-                <Text style={modalStyles.examTitle}>{exam.name}</Text>
+                <Text style={[modalStyles.examTitle,{ color: isDarkMode ? '#e1ecff' : '#2c3e50' }]}>{exam.name}</Text>
                 {exam.dailyTargets.length === 0 ? (
-                  <Text style={modalStyles.noTargets}>No targets for this exam.</Text>
+                  <Text style={[modalStyles.noTargets,{ color: isDarkMode ? '#c3d1ed' : '#95a5a6' }]}>No targets for this exam.</Text>
                 ) : (
                   exam.dailyTargets.map(target => (
                     <View key={target.id} style={[modalStyles.targetRow, { justifyContent: 'space-between' }]}>
@@ -321,6 +357,15 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 13,
     color: '#bdc3c7',
+  },
+  themeToggle: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  themeToggleText: {
+    fontWeight: '700',
+    fontSize: 12,
   },
   statsContainer: {
     flexDirection: 'row',

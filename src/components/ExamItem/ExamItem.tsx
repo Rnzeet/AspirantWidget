@@ -9,9 +9,10 @@ type ExamItemProps = {
   exam: Exam;
   onDelete?: (id: string) => void;
   onUpdateExam?: (exam: Exam) => void;
+  isDarkMode?: boolean;
 };
 
-const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete, onUpdateExam }) => {
+const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete, onUpdateExam, isDarkMode = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const countdown = calculateCountdown(exam.date);
@@ -38,15 +39,18 @@ const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete, onUpdateExam }) => 
 
   return (
     <Pressable
-      style={[styles.card, { borderLeftColor: urgency.color }]}
+      style={[
+        styles.card,
+        { borderLeftColor: urgency.color, backgroundColor: isDarkMode ? '#17223d' : '#fff' },
+      ]}
       onPress={() => setIsExpanded(!isExpanded)}
     >
       <View style={styles.container}>
         {/* Main Card Header */}
         <View style={styles.headerContainer}>
           <View style={styles.examInfoContainer}>
-            <Text style={styles.examName}>{exam.name}</Text>
-            <Text style={styles.examDescription}>{exam.description}</Text>
+            <Text style={[styles.examName, { color: isDarkMode ? '#e9eeff' : '#1a1a1a' }]}>{exam.name}</Text>
+            <Text style={[styles.examDescription, { color: isDarkMode ? '#b8c5e0' : '#666' }]}>{exam.description}</Text>
             <Pressable onPress={() => {
               setDateValue(examDate);
               setShowDatePicker(true);
@@ -125,7 +129,11 @@ const ExamItem: React.FC<ExamItemProps> = ({ exam, onDelete, onUpdateExam }) => 
                           onChangeText={setEditingText}
                         />
                       ) : (
-                        <Text style={[styles.targetText, target.completed && styles.targetCompleted]}>
+                        <Text style={[
+                          styles.targetText,
+                          target.completed && styles.targetCompleted,
+                          { color: isDarkMode ? '#dfe5ff' : '#495057' },
+                        ]}>
                           {target.title}
                         </Text>
                       )}

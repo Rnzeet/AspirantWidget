@@ -536,6 +536,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     marginBottom: 20,
+    color:'red'
   },
   stopwatchControls: {
     flexDirection: 'row',

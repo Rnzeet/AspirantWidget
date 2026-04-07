@@ -259,11 +259,13 @@ export const styles = StyleSheet.create({
   },
   modalText: {
     marginBottom: 15,
-    textAlign: "center"
+    textAlign: "center",
+    color:"red"
   },
   countdownText: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    color:"red"
   }
 });
